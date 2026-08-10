@@ -24,7 +24,7 @@ A Python-based scraper that monitors [Ponisha](https://ponisha.ir) (an Iranian f
 ## 📂 Project Structure
 
 ```
-punisha-job-alert/
+ponisha-job-alert/
 │
 ├── main.py # Entry point of the application
 ├── scraper.py # Selenium logic: login, filtering, pagination, project extraction
@@ -40,8 +40,8 @@ punisha-job-alert/
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Mojtaba-Shafidokht/punisha-job-alert.git
-cd punisha-job-alert
+git clone https://github.com/Mojtaba-Shafidokht/ponisha-job-alert.git
+cd ponisha-job-alert
 ```
 
 2. Create and activate virtual environment:
@@ -83,7 +83,7 @@ chrome://version
 3. Place `chromedriver.exe` in the project directory:
 
 ```
-punisha-job-alert/
+ponisha-job-alert/
 ├── chromedriver.exe
 ```
 
