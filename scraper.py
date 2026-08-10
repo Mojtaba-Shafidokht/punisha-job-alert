@@ -7,12 +7,12 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.wait import WebDriverWait
 import selenium.webdriver.support.expected_conditions as ec
-from utils import clean_count
+from utils import clean_count, extract_id
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
-PUNISHA_HOME_URL = "https://ponisha.ir/"
-PUNISHA_LOGIN_URL = "https://ponisha.ir/users/login"
-PUNISHA_PROJECTS_URL = "https://ponisha.ir/search/projects"
+PONISHA_HOME_URL = "https://ponisha.ir/"
+PONISHA_LOGIN_URL = "https://ponisha.ir/users/login"
+PONISHA_PROJECTS_URL = "https://ponisha.ir/search/projects"
 
 BASE_DIR = Path(__file__).resolve().parent
 PROFILE_DIR = BASE_DIR / "chrome_profile"
@@ -137,7 +137,7 @@ def _manual_login(driver):
     long_wait = WebDriverWait(driver, 180)
     try:
         print("Loading login url...")
-        driver.get(PUNISHA_LOGIN_URL)
+        driver.get(PONISHA_LOGIN_URL)
 
     except TimeoutException:
         print("Timeout error occurred — Check your internet connection.")
@@ -152,7 +152,7 @@ def _manual_login(driver):
     )
 
     if not profile_menu_el:
-        print("You could not sign in to 'Punisha' — Try again!")
+        print("You could not sign in to 'Ponisha' — Try again!")
         return None
 
     return True
@@ -241,7 +241,15 @@ def _retrieve_projects(wait):
         )
         budget = budget_el.text if budget_el else None
 
+        project_url_el = _safe_find(
+            project,
+            ".//a[starts-with(@href, '/project/')]"
+        )
+        project_url = project_url_el.get_attribute('href') if project_url_el else None
+        project_id = extract_id(project_url)
+
         projects.append({
+            "id": project_id,
             "title": title,
             "description": desc,
             "skills": skills,
@@ -257,8 +265,8 @@ def scrape():
     driver, wait = _setup_driver()
 
     try:
-        print(f"Loading {PUNISHA_HOME_URL}...")
-        driver.get(PUNISHA_HOME_URL)
+        print(f"Loading {PONISHA_HOME_URL}...")
+        driver.get(PONISHA_HOME_URL)
 
     except TimeoutException:
         print("Timeout error occurred — Check your internet connection.")
@@ -276,8 +284,8 @@ def scrape():
         print("You are already signed up.")
 
     try:
-        print(f"Loading {PUNISHA_PROJECTS_URL}...")
-        driver.get(PUNISHA_PROJECTS_URL)
+        print(f"Loading {PONISHA_PROJECTS_URL}...")
+        driver.get(PONISHA_PROJECTS_URL)
 
     except TimeoutException:
         print("Timeout error occurred — Check your internet connection.")
