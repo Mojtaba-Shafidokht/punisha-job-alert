@@ -221,5 +221,5 @@ __marimo__/
 .venv/
 test.py
 chromedriver.exe
-divar_ads.db
 chrome_profile/
+projects.json
