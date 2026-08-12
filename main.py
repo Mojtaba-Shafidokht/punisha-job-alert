@@ -1,13 +1,24 @@
 from scraper import scrape
+from database import load_data, save_data, find_new_projects
 
 
 def main():
-    scraped_data = scrape()
-    print("-" * 20)
-    for dic in scraped_data:
-        for k, v in dic.items():
+    existing = load_data()
+    scraped = scrape()
+
+    new_projects = find_new_projects(scraped, existing)
+
+    if new_projects:
+        pass
+
+    merged = {**existing, **scraped}
+    save_data(merged)
+
+    print("-" * 50)
+    for project in merged:
+        for k, v in merged[project].items():
             print(f"{k.capitalize()}: {v}")
-        print("-" * 20)
+        print("-" * 50)
 
 
 if __name__ == "__main__":

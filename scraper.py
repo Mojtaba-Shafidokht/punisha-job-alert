@@ -205,7 +205,7 @@ def _retrieve_projects(wait):
 
     projects_elements = [el for el in all_projects if el.is_displayed()]
 
-    projects = []
+    projects = {}
     for project in projects_elements:
         title = _field_text(project, ".//span[contains(@class, 'MuiTypography-h4')]")
         desc = _field_text(project, ".//span[contains(@class, 'MuiTypography-subtitle1')]")
@@ -237,8 +237,7 @@ def _retrieve_projects(wait):
         project_url = project_url_el.get_attribute('href') if project_url_el else None
         project_id = extract_id(project_url)
 
-        projects.append({
-            "id": project_id,
+        projects[project_id] = {
             "title": title,
             "description": desc,
             "skills": skills,
@@ -246,7 +245,7 @@ def _retrieve_projects(wait):
             "bids": project_bids,
             "budget": budget,
             "url": project_url
-        })
+        }
 
     return projects
 
@@ -275,7 +274,7 @@ def scrape():
 
     current_url = driver.current_url
 
-    all_results = []
+    all_results = {}
     total_pages = _get_total_pages(wait)
     if not _teardown(total_pages, driver):
         return None
@@ -296,7 +295,7 @@ def scrape():
         if page_results is None:
             return None
 
-        all_results.extend(page_results)
+        all_results.update(page_results)
 
     driver.quit()
     return all_results
