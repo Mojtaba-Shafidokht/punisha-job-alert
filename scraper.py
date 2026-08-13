@@ -18,9 +18,16 @@ PROFILE_DIR = BASE_DIR / "chrome_profile"
 PROFILE_DIR.mkdir(exist_ok=True)
 
 
-def _setup_driver():
+def _setup_driver(headless=True):
     options = Options()
+    if headless:
+        options.add_argument("--headless=new")
+
     options.add_argument(f"user-data-dir={PROFILE_DIR}")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("window-size=1920,1080")
 
     try:
         driver = webdriver.Chrome(
@@ -139,7 +146,7 @@ def _login_check(wait):
 
 
 def _manual_login(driver):
-    print("You are not signed in — Redirecting to login page...")
+    print("You are not signed in — redirecting to login page...")
     print("Please log in during (180s)")
     long_wait = WebDriverWait(driver, 180)
     _safe_get(driver, PONISHA_LOGIN_URL)
@@ -250,16 +257,41 @@ def _retrieve_projects(wait):
     return projects
 
 
-def scrape():
-    driver, wait = _setup_driver()
+def login_only(headless=False):
+    driver, wait = _setup_driver(headless)
+    _safe_get(driver, PONISHA_HOME_URL)
+    if _login_check(wait):
+        print("You are already signed in - run program once again to scrape jobs.")
+        driver.quit()
+        return True
+
+    else:
+        if _teardown(_manual_login(driver), driver):
+            print("Signed up successfully - run program once again to scrape jobs.")
+            driver.quit()
+            return True
+
+        else:
+            print("Login process failed - try again!")
+            return None
+
+
+def scrape(headless=True):
+    driver, wait = _setup_driver(headless)
     _safe_get(driver, PONISHA_HOME_URL)
 
     if not _teardown(_page_loaded(wait), driver):
         return None
 
     if not _login_check(wait):
-        if not _teardown(_manual_login(driver), driver):
-            return None
+        if not headless:
+            if not _teardown(_manual_login(driver), driver):
+                return None
+
+        else:
+            print("Login required but driver is headless")
+            driver.quit()
+            return "LoginRequiredError"
 
     else:
         print("You are already signed up.")
