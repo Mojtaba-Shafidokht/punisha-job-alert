@@ -1,4 +1,5 @@
 import argparse
+from notifier import send_notification
 from scraper import scrape, login_only
 from database import load_data, save_data, find_new_projects
 
@@ -30,7 +31,7 @@ def main():
         new_projects = find_new_projects(scraped, existing)
 
         if new_projects:
-            pass
+            send_notification(new_projects)
 
         merged = {**existing, **scraped}
         save_data(merged)
