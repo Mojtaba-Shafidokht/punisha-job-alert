@@ -223,3 +223,4 @@ test.py
 chromedriver.exe
 chrome_profile/
 projects.json
+.env
