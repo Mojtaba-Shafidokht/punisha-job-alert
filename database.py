@@ -7,7 +7,6 @@ def load_data():
     try:
         with open(FILE_NAME, 'r', encoding='utf-8') as f:
             return json.load(f)
-        return True
 
     except Exception as e:
         print(f"Error occurred: {e}")
