@@ -4,6 +4,28 @@ from scraper import scrape, login_only
 from database import load_data, save_data, find_new_projects
 
 
+def run_scrape_cycle():
+    print("Running cycle...")
+    existing = load_data()
+    scraped = scrape(headless=True)
+    if scraped == "LoginRequiredError":
+        print("Session expired - run with --login to sign in again.")
+        return None
+
+    if not scraped:
+        print("Scraping failed - check logs above.")
+        return None
+
+    new_projects = find_new_projects(scraped, existing)
+
+    if new_projects:
+        send_notification(new_projects)
+
+    merged = {**existing, **scraped}
+    save_data(merged)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="Ponisha Job Alert Scraper")
     parser.add_argument("--login", action="store_true", help="login manually")
@@ -18,29 +40,9 @@ def main():
         return None
 
     else:
-        existing = load_data()
-        scraped = scrape(headless)
-        if scraped == "LoginRequiredError":
-            print("Session expired - run with --login to sign in again.")
-            return None
+        run_scrape_cycle()
 
-        if not scraped:
-            print("Scraping failed - check logs above.")
-            return None
-
-        new_projects = find_new_projects(scraped, existing)
-
-        if new_projects:
-            send_notification(new_projects)
-
-        merged = {**existing, **scraped}
-        save_data(merged)
-
-        print("-" * 50)
-        for project in merged:
-            for k, v in merged[project].items():
-                print(f"{k.capitalize()}: {v}")
-            print("-" * 50)
+    return True
 
 
 if __name__ == "__main__":
