@@ -1,13 +1,24 @@
+import os
+import re
 from datetime import datetime
 import requests
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 PROXY = os.getenv("TELEGRAM_PROXY")
+
+RLM = "\u200F"
+LRI = "\u2066"
+PDI = "\u2069"
+
+_LTR_RUN = re.compile(r'[A-Za-z0-9,./:_%-]+')
+
+
+def _isolate_ltr_runs(text):
+    return _LTR_RUN.sub(lambda m: f"{LRI}{m.group()}{PDI}", text)
 
 
 def _get_proxies():
@@ -16,22 +27,34 @@ def _get_proxies():
     return None
 
 
+FIELD_LABELS = {
+    "title": "عنوان پروژه",
+    "description": "توضیحات پروژه",
+    "skills": "مهارت‌های مورد نیاز",
+    "deadline": "زمان پیشنهاد",
+    "bids": "تعداد پیشنهادها",
+    "budget": "بودجه‌ی کارفرما",
+    "url": "آدرس پروژه",
+}
+
+
 def _format_projects(project):
     formatted_project = ""
-    for k, v in project.items():
-        if v is None:
-            v = "نامشخص"
+    for k, v in FIELD_LABELS.items():
+        value = project.get(k)
+        if project.get(k) is None:
+            value = "نامشخص"
 
-        if k == "skills":
-            v = ", ".join(v)
+        if project.get(k) is not None and k == "skills":
+            value = ", ".join(project.get(k))
 
-        formatted_project += f"{k.capitalize()}: {v}\n"
+        formatted_project += _isolate_ltr_runs(f"{RLM}{v}: \n{value}\n\n")
 
     return formatted_project
 
 
 def send_notification(new_projects):
-    date = datetime.now().strftime("%Y-%m-%d %H:%S")
+    date = datetime.now().strftime("%Y-%m-%d %H:%M")
     header = f"🔔 Ponisha Job Alert\n🕐 {date}\n\n"
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     for project in new_projects.values():
