@@ -18,7 +18,19 @@ PROFILE_DIR = BASE_DIR / "chrome_profile"
 PROFILE_DIR.mkdir(exist_ok=True)
 
 
+def _clear_stale_lock():
+    lock_file = PROFILE_DIR / "SingletonLock"
+    if lock_file.exists():
+        try:
+            lock_file.unlink()
+            print("Removed stale profile lock.")
+
+        except Exception as e:
+            print(f"Could not remove stale lock: {e}")
+
+
 def _setup_driver(headless=True):
+    _clear_stale_lock()
     options = Options()
     if headless:
         options.add_argument("--headless=new")
@@ -43,9 +55,8 @@ def _setup_driver(headless=True):
     return driver, wait
 
 
-def _teardown(step_result, driver):
+def _teardown(step_result):
     if not step_result:
-        driver.quit()
         return False
 
     else:
@@ -83,7 +94,6 @@ def _safe_get(driver, url):
 
     except TimeoutException:
         print("Timeout error occurred — Check your internet connection.")
-        driver.quit()
         return None
 
 
@@ -259,75 +269,79 @@ def _retrieve_projects(wait):
 
 def login_only(headless=False):
     driver, wait = _setup_driver(headless)
-    _safe_get(driver, PONISHA_HOME_URL)
-    if _login_check(wait):
-        print("You are already signed in - run program once again to scrape jobs.")
-        driver.quit()
-        return True
-
-    else:
-        if _teardown(_manual_login(driver), driver):
-            print("Signed up successfully - run program once again to scrape jobs.")
-            driver.quit()
+    try:
+        _safe_get(driver, PONISHA_HOME_URL)
+        if _login_check(wait):
+            print("You are already signed in - run program once again to scrape jobs.")
             return True
 
         else:
-            print("Login process failed - try again!")
-            return None
+            if _teardown(_manual_login(driver)):
+                print("Signed up successfully - run program once again to scrape jobs.")
+                return True
+
+            else:
+                print("Login process failed - try again!")
+                return None
+
+    finally:
+        driver.quit()
 
 
 def scrape(headless=True):
     driver, wait = _setup_driver(headless)
-    _safe_get(driver, PONISHA_HOME_URL)
+    try:
+        _safe_get(driver, PONISHA_HOME_URL)
 
-    if not _teardown(_page_loaded(wait), driver):
-        return None
-
-    if not _login_check(wait):
-        if not headless:
-            if not _teardown(_manual_login(driver), driver):
-                return None
-
-        else:
-            print("Login required but driver is headless")
-            driver.quit()
-            return "LoginRequiredError"
-
-    else:
-        print("You are already signed up.")
-
-    _safe_get(driver, PONISHA_PROJECTS_URL)
-
-    if not _teardown(_page_loaded(wait), driver):
-        return None
-
-    if not _teardown(_checkbox_status(wait), driver):
-        return None
-
-    current_url = driver.current_url
-
-    all_results = {}
-    total_pages = _get_total_pages(wait)
-    if not _teardown(total_pages, driver):
-        return None
-
-    for page_num in range(1, total_pages + 1):
-        if page_num > 1:
-            page_url = build_page_url(current_url, page_num)
-            _safe_get(driver, page_url)
-
-            if not _teardown(_page_loaded(wait), driver):
-                return None
-
-        else:
-            page_url = current_url
-
-        print(f"Retrieving projects from {page_url}")
-        page_results = _retrieve_projects(wait)
-        if page_results is None:
+        if not _teardown(_page_loaded(wait)):
             return None
 
-        all_results.update(page_results)
+        if not _login_check(wait):
+            if not headless:
+                if not _teardown(_manual_login(driver)):
+                    return None
 
-    driver.quit()
-    return all_results
+            else:
+                print("Login required but driver is headless")
+                return "LoginRequiredError"
+
+        else:
+            print("You are already signed up.")
+
+        _safe_get(driver, PONISHA_PROJECTS_URL)
+
+        if not _teardown(_page_loaded(wait)):
+            return None
+
+        if not _teardown(_checkbox_status(wait)):
+            return None
+
+        current_url = driver.current_url
+
+        all_results = {}
+        total_pages = _get_total_pages(wait)
+        if not _teardown(total_pages):
+            return None
+
+        for page_num in range(1, total_pages + 1):
+            if page_num > 1:
+                page_url = build_page_url(current_url, page_num)
+                _safe_get(driver, page_url)
+
+                if not _teardown(_page_loaded(wait)):
+                    return None
+
+            else:
+                page_url = current_url
+
+            print(f"Retrieving projects from {page_url}")
+            page_results = _retrieve_projects(wait)
+            if page_results is None:
+                return None
+
+            all_results.update(page_results)
+
+        return all_results
+
+    finally:
+        driver.quit()
