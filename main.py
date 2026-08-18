@@ -40,7 +40,7 @@ def main():
         return None
 
     else:
-        run_scrape_cycle()
+        run_scrape_cycle(headless)
 
     return True
 
