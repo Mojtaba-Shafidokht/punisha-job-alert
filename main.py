@@ -1,15 +1,22 @@
 import argparse
-from notifier import send_notification
+from notifier import send_notification, send_login_alert
 from scraper import scrape, login_only
 from database import load_data, save_data, find_new_projects
+from state import should_notify_login_alert, mark_login_alert_sent, reset_login_alert
 
 
-def run_scrape_cycle():
-    print("Running cycle...")
+def run_scrape_cycle(headless=True):
     existing = load_data()
-    scraped = scrape(headless=True)
+    scraped = scrape(headless)
     if scraped == "LoginRequiredError":
-        print("Session expired - run with --login to sign in again.")
+        if should_notify_login_alert():
+            send_login_alert()
+            print("Session expire notification was sent.")
+            mark_login_alert_sent()
+
+        else:
+            print("Session expired — notification skipped (cooldown active).")
+
         return None
 
     if not scraped:
@@ -23,6 +30,7 @@ def run_scrape_cycle():
 
     merged = {**existing, **scraped}
     save_data(merged)
+    reset_login_alert()
     return True
 
 

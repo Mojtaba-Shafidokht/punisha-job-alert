@@ -74,3 +74,25 @@ def send_notification(new_projects):
 
         except Exception as e:
             print(f"⚠️ Failed to send Telegram notification: {e}")
+
+
+def send_login_alert():
+    date = datetime.now().strftime("%Y-%m-%d %H:%M")
+    header = f"🔔 Ponisha Job Alert\n🕐 {date}\n\n"
+    alert_text = "⚠️ Session expired - run with --login to sign in again."
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
+    final_message = header + alert_text
+    try:
+        requests.post(
+            url,
+            data={
+                "chat_id": CHAT_ID,
+                "text": final_message
+            },
+            proxies=_get_proxies(),
+            timeout=20
+        )
+
+    except Exception as e:
+        print(f"⚠️ Failed to send Telegram notification: {e}")
