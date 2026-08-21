@@ -4,6 +4,10 @@ A Python-based scraper that monitors [Ponisha](https://ponisha.ir) (an Iranian f
 
 ---
 
+![Demo](assets/ponisha_demo.gif)
+
+---
+
 ## 🚀 Features
 
 * 🔍 Scrapes project listings filtered by your registered skills on Ponisha
